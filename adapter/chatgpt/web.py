@@ -43,8 +43,8 @@ class ChatGPTWebAdapter(BotAdapter):
 
     async def switch_model(self, model_name):
         if (
-            self.bot.account.auto_remove_old_conversations
-            and self.conversation_id is not None
+                self.bot.account.auto_remove_old_conversations
+                and self.conversation_id is not None
         ):
             await self.bot.delete_conversation(self.conversation_id)
         self.conversation_id = None
@@ -55,17 +55,18 @@ class ChatGPTWebAdapter(BotAdapter):
     async def rollback(self):
         if len(self.parent_id_prev_queue) <= 0:
             return False
+        self.conversation_id = self.conversation_id_prev_queue.pop()
         self.parent_id = self.parent_id_prev_queue.pop()
         return True
 
     async def on_reset(self):
         try:
             if (
-                self.bot.account.auto_remove_old_conversations
-                and self.conversation_id is not None
+                    self.bot.account.auto_remove_old_conversations
+                    and self.conversation_id is not None
             ):
                 await self.bot.delete_conversation(self.conversation_id)
-        except:
+        except Exception:
             logger.warning("删除会话记录失败。")
         self.conversation_id = None
         self.parent_id = None
@@ -107,13 +108,13 @@ class ChatGPTWebAdapter(BotAdapter):
                 remaining = divmod(current_time - first_accessed_at, datetime.timedelta(seconds=60))
                 minute = remaining[0]
                 second = remaining[1].seconds
-                raise BotRatelimitException(f"{minute}分{second}秒")
+                raise BotRatelimitException(f"{minute}分{second}秒") from e
             if e.code == 6:
-                raise ConcurrentMessageException()
+                raise ConcurrentMessageException() from e
             raise e
         except Exception as e:
             if "Only one message at a time" in str(e):
-                raise ConcurrentMessageException()
+                raise ConcurrentMessageException() from e
             raise e
 
     def get_queue_info(self):

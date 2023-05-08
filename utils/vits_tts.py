@@ -1,7 +1,7 @@
 import regex as re
 from loguru import logger
 from constants import config
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession, ClientTimeout, FormData
 
 __all__ = ['VitsAPI']
 
@@ -21,14 +21,15 @@ class VitsAPI:
         self.initialized = True
 
     def check_id_exists(self, json_list, given_id):
-        for item in json_list:
-            for key, value in item.items():
-                if str(given_id) in [key, value]:
-                    return key, value
+        if json_list["status"] == "success":
+            id = json_list["id"]
+            if str(given_id) == str(id):
+                name = json_list["name"]
+                return id, name
         return None, None
 
     async def set_id(self, new_id):
-        json_array = await self.get_json_array()
+        json_array = await self.get_json_data(new_id)
         id_found, voice_name = self.check_id_exists(json_array, new_id)
 
         if not voice_name:
@@ -36,6 +37,20 @@ class VitsAPI:
 
         self.id = id_found
         return voice_name
+
+    async def get_json_data(self, new_id):
+        url = f"{config.vits.api_url}/check"
+
+        try:
+            async with ClientSession(timeout=ClientTimeout(total=config.vits.timeout)) as session:
+                form_data = FormData()
+                form_data.add_field("model", "vits")
+                form_data.add_field("id", new_id)
+                async with session.post(url=url, data=form_data) as res:
+                    return await res.json()
+        except Exception as e:
+            logger.error(f"获取语音音色列表失败: {str(e)}")
+            raise Exception("获取语音音色列表失败，请检查网络连接和API设置")
 
     async def get_json_array(self):
         url = f"{config.vits.api_url}/speakers"
@@ -51,8 +66,6 @@ class VitsAPI:
             raise Exception("获取语音音色列表失败，请检查网络连接和API设置")
 
     async def voice_speakers_check(self, new_id=None):
-        json_array = await self.get_json_array()
-
         try:
             if new_id is not None:
                 integer_number = int(new_id)
@@ -60,7 +73,9 @@ class VitsAPI:
                 integer_number = int(config.text_to_speech.default)
             else:
                 raise ValueError("默认语音音色未设置，请检查配置文件")
-            voice_name = self.check_id_exists(json_array, integer_number)
+
+            json_data = await self.get_json_data(integer_number)
+            _, voice_name = self.check_id_exists(json_data, integer_number)
         except ValueError:
             logger.error("vits引擎中音色只能为纯数字")
             return None
@@ -70,8 +85,8 @@ class VitsAPI:
 
         return integer_number
 
-    async def get_voice_data(self, text, lang, format):
-        url = f"{config.vits.api_url}?text={text}&lang={lang}&id={self.id}&format={format}&length={config.vits.speed}"
+    async def get_voice_data(self, text, lang, voice_type):
+        url = f"{config.vits.api_url}?text={text}&lang={lang}&id={self.id}&format={voice_type}&length={config.vits.speed}"
 
         async with ClientSession(timeout=ClientTimeout(total=config.vits.timeout)) as session:
             try:
@@ -100,12 +115,9 @@ class VitsAPI:
         return save_path
 
     def linguistic_process(self, text):
-        if len(text) > 150:
-            text = "这句话太长了，抱歉"
-
         lang = self.lang
 
-        if lang == "auto":return text
+        if lang == "auto": return text
 
         patterns = {
             "mix": r'[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`\~\u3002\uff1b\uff0c\uff1a\u201c\u201d\uff08\uff09\u3001\uff1f\u300a\u300b\u4e00-\u9fff]+|[\u3040-\u309f\u30a0-\u30ff]+|\w+|[^\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\w]+',
@@ -132,25 +144,17 @@ class VitsAPI:
             else ''.join(matches)
         )
 
-    async def response(self, text, format, path):
+    async def response(self, text, voice_type, path):
         text = self.linguistic_process(text)
-        content = await self.get_voice_data(text, self.lang, format)
+        content = await self.get_voice_data(text, self.lang, voice_type)
         if content is not None:
             return self.save_voice_file(content, path)
 
-    async def process_message(self, message, path):
+    async def process_message(self, message, path, voice_type):
         if not self.initialized:
             await self.initialize()
 
-        return (
-            await self.response(message, "silk", path)
-            if config.mirai or config.onebot
-            else await self.response(message, "wav", path)
-        )
+        return await self.response(message, voice_type, path)
 
 
 vits_api_instance = VitsAPI()
-async def vits_api(message: str, path: str):
-    await vits_api_instance.initialize()
-    return await vits_api_instance.process_message(message, path)
-

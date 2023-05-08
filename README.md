@@ -21,7 +21,12 @@
 
 ***
 
-* [交流群（Discord）](https://discord.gg/cc3S2R6RQV)会发布最新的项目动态、问题答疑和交流 [QQ 群](https://jq.qq.com/?_wv=1027&k=XbGuxdTu) 。  
+* [Discord 一群](https://discord.gg/cc3S2R6RQV)、
+  [QQ 二群](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S1R4eIlODtyKZsEKfWxb2-nOIHELbeJY&authKey=kAftCAALE8OJgwQnArrD6zPtncCAaY456QgUXT3l2OMJ57NwRXRkhv4KL7DzOLzs&noverify=0&group_code=373254418)、
+  [QQ 三群](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=urlhCH8y7Ro2S-iXt63X4s5eILUny4Iw&authKey=ejiwoNa4Yez6IMLyf2vj%2FeRiC1frdFrNNekbRfaPnSQbcD7bgebo5y5A7rPaRKBq&noverify=0&group_code=533109074)、
+  [QQ 四群](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=Ibiu6EmXof30Fa7MJ5j8nJFwaUGTf5bM&authKey=YKx5a%2BK5qnWkk5VlsxxDfYl0nCrKSekQm%2FoLQVqr%2FcO%2FQY2S6N24XdI23XugBrF0&noverify=0&group_code=799737883)、
+  [QQ 开发群](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=lisyXibhUj93DgIZptQu3VZ4ka3F5-rW&authKey=PBCzRQX4Zei%2BB6n5Tdyp9p5bqcF0tLBlfGANT4dSSKQIFYR66WwaZSMEDahWo%2FzZ&noverify=0&group_code=701933732)  
+  会发布最新的项目动态、问题答疑和交流。 
   加群之前先看[这里](https://github.com/lss233/chatgpt-mirai-qq-bot/issues)的内容能不能解决你的问题。  
   如果不能解决，把遇到的问题、**日志**和配置文件准备好后再提问。
 * [调试群](https://jq.qq.com/?_wv=1027&k=TBX8Saq7) 这个群里有很多 ChatGPT QQ 机器人，不解答技术问题。 
@@ -40,7 +45,7 @@
 * [x] 百度云内容审核
 * [x] 额度限制 
 * [x] 人格设定
-* [x] 支持 Mirai、 go-cqhttp、 Telegram、Discord  
+* [x] 支持 Mirai、 go-cqhttp、 Telegram、Discord、微信  
 * [x] 可作为 HTTP 服务端提供 Web API
 * [x] 支持 ChatGPT 网页版
 * [x] 支持 ChatGPT Plus
@@ -61,7 +66,8 @@
 | OneBot   | 支持   | 支持   | 支持   | 支持    | 支持  | 支持   |
 | Telegram | 支持   | 支持   | 部分支持 | 部分支持  | 支持  | 支持   |
 | Discord  | 支持   | 支持   | 部分支持 | 不支持   | 支持  | 支持   |
-
+| 企业微信 | 支持   | 支持   | 支持 | 不支持  | 支持  | 支持   |
+| 个人微信 | 支持   | 支持   | 支持 | 不支持  | 支持  | 支持   |
 
 ## 🐎 命令
 
@@ -78,7 +84,7 @@
 它会为你安装 Docker、 Docker Compose 和编写配置文件。  
 
 ```bash
-bash -c "$(curl -fsSL https://gist.githubusercontent.com/lss233/54f0f794f2157665768b1bdcbed837fd/raw/chatgpt-mirai-installer-154-16RC3.sh)"
+bash -c "$(wget -O- https://gist.githubusercontent.com/lss233/2fdd75be3f0724739368d0dcd9d1367d/raw/62a790da4a391af096074b3355c2c2b7ecab3c28/chatgpt-mirai-installer-gocqhttp.sh)"
 ```
 
 </details>
@@ -102,22 +108,19 @@ bash -c "$(curl -fsSL https://gist.githubusercontent.com/lss233/54f0f794f2157665
 # 修改 /path/to/config.cfg 为你 config.cfg 的位置
 # XPRA_PASSWORD=123456 中的 123456 是你的 Xpra 密码，建议修改
 docker run --name mirai-chatgpt-bot \
-    -e XPRA_PASSWORD=123456 \
     -v /path/to/config.cfg:/app/config.cfg \
     --network host \
     lss233/chatgpt-mirai-qq-bot:browser-version
 ```
 
-3. 启动后，在浏览器访问 `http://你的服务器IP:14500` 可以访问到登录 ChatGPT 的浏览器页面  
-
 </details>
 
 <details>
-    <summary>Windows: 快速部署包 (自带 Mirai，新人推荐）</summary>
+    <summary>Windows: 快速部署包 (自带 Mirai/go-cqhttp，新人推荐）</summary>
 
 我们为 Windows 用户制作了一个快速启动包，可以在 [Release](https://github.com/lss233/chatgpt-mirai-qq-bot/releases) 中找到。    
 
-文件名为：`quickstart-windows-amd64.zip`  或者 `Windows快速部署包.zip`
+文件名为：`quickstart-windows-go-cqhttp-amd64.zip`（推荐） 或者 `quickstart-windows-mirai-amd64.zip`
 
 </details>
 
@@ -156,7 +159,7 @@ python3 bot.py
 </details>
 
 **[广告] 免费 OpenAI API Key**  
-<img src=https://user-images.githubusercontent.com/50035229/229976556-99e8ac26-c8c3-4f56-902d-a52a7f2e50d5.png width=300px />  
+<img src=https://user-images.githubusercontent.com/8984680/232325002-c3e4550e-f642-45fc-b51c-f570386721c3.png width=300px />  
 你可以在[这里获取免费的 OpenAI API Key](https://freeopenai.xyz/) 测试使用。
 ## 🕸 HTTP API
 
@@ -193,12 +196,76 @@ debug = false
 **响应格式**
 |参数名|类型|说明|
 |:---|:---|:---|
-|message| String |返回信息，HTML 格式|  
+|result| String |SUCESS,DONE,FAILED|
+|message| String[] |文本返回，支持多段返回|
+|voice| String[] |音频返回，支持多个音频的base64编码；参考：data:audio/mpeg;base64,...|
+|image| String[] |图片返回，支持多个图片的base64编码；参考：data:image/png;base64,...|
 
 **响应示例**  
 ```json
 {
-    "message": "pong!"
+    "result": "DONE",
+    "message": ["pong!"],
+    "voice": [],
+    "image": []
+}
+```
+
+**POST**    `/v2/chat`  
+
+**请求参数**  
+
+|参数名|必选|类型|说明|
+|:---|:---|:---|:---|
+|session_id| 是 | String |会话ID，默认：`friend-default_session`|
+|username| 是 | String |用户名，默认：`某人`|
+|message| 是 | String |消息，不能为空|  
+
+**请求示例**
+```json
+{
+    "session_id": "friend-123456",
+    "username": "testuser",
+    "message": "ping"
+}
+```
+**响应格式**
+字符串：request_id
+
+**响应示例**  
+```
+1681525479905
+```
+
+**GET**    `/v2/chat/response`  
+
+**请求参数**  
+
+|参数名|必选|类型|说明|
+|:---|:---|:---|:---|
+|request_id| 是 | String |请求id，/v2/chat返回的值|
+
+**请求示例**
+```
+/v2/chat/response?request_id=1681525479905
+```
+**响应格式**
+|参数名|类型|说明|
+|:---|:---|:---|
+|result| String |SUCESS,DONE,FAILED|
+|message| String[] |文本返回，支持多段返回|
+|voice| String[] |音频返回，支持多个音频的base64编码；参考：data:audio/mpeg;base64,...|
+|image| String[] |图片返回，支持多个图片的base64编码；参考：data:image/png;base64,...|
+
+* 每次请求返回增量并清空。DONE、FAILED之后没有更多返回。
+
+**响应示例**  
+```json
+{
+    "result": "DONE",
+    "message": ["pong!"],
+    "voice": ["data:audio/mpeg;base64,..."],
+    "image": ["data:image/png;base64,...", "data:image/png;base64,..."]
 }
 ```
 </details>

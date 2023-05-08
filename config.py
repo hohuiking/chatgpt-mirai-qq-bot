@@ -9,13 +9,11 @@ import toml
 
 
 class Onebot(BaseModel):
-    qq: int
-    """Bot 的 QQ 号"""
     manager_qq: int = 0
     """机器人管理员的 QQ 号"""
     reverse_ws_host: str = "0.0.0.0"
     """go-cqhttp 的 反向 ws 主机号"""
-    reverse_ws_port: Optional[int] = None
+    reverse_ws_port: Optional[int] = 8566
     """go-cqhttp 的 反向 ws 端口号，填写后开启 反向 ws 模式"""
 
 
@@ -58,6 +56,24 @@ class HttpService(BaseModel):
     debug: bool = False
     """是否开启debug，错误时展示日志"""
 
+class WecomBot(BaseModel):
+    host: str = "0.0.0.0"
+    """企业微信回调地址，需要能够被公网访问，0.0.0.0则不限制访问地址"""
+    port: int = 5001
+    """Http service port, 默认5001"""
+    debug: bool = False
+    """是否开启debug，错误时展示日志"""
+    corp_id: str
+    """企业微信 的 企业 ID"""
+    agent_id: str
+    """企业微信应用 的 AgentId"""
+    secret: str
+    """企业微信应用 的 Secret"""
+    token: str
+    """企业微信应用 API 令牌 的 Token"""
+    encoding_aes_key: str
+    """企业微信应用 API 令牌 的 EncodingAESKey"""
+    
 
 class OpenAIGPT3Params(BaseModel):
     temperature: float = 0.5
@@ -69,7 +85,7 @@ class OpenAIGPT3Params(BaseModel):
 
 
 class OpenAIAuths(BaseModel):
-    browserless_endpoint: Optional[str] = None
+    browserless_endpoint: Optional[str] = "https://chatgpt-proxy.lss233.com/api/"
     """自定义无浏览器登录模式的接入点"""
     api_endpoint: Optional[str] = None
     """自定义 OpenAI API 的接入点"""
@@ -174,6 +190,9 @@ class BingAuths(BaseModel):
     show_remaining_count: bool = True
     """在 Bing 的回复后加上剩余次数"""
 
+    use_drawing: bool = False
+    """使用 Bing 画图"""
+
     wss_link: str = "wss://sydney.bing.com/sydney/ChatHub"
     """Bing 的 Websocket 接入点"""
     bing_endpoint: str = "https://edgeservices.bing.com/edgesvc/turing/conversation/create"
@@ -190,8 +209,12 @@ class BardAuths(BaseModel):
 
 
 class YiyanCookiePath(BaseModel):
-    cookie_content: str
-    """"文心一言网站的 Cookie 内容"""
+    BDUSS: Optional[str] = None
+    """百度 Cookie 中的 BDUSS 字段"""
+    BAIDUID: Optional[str] = None
+    """百度 Cookie 中的 BAIDUID 字段"""
+    cookie_content: Optional[str] = None
+    """百度 Cookie （已弃用）"""
     proxy: Optional[str] = None
     """可选的代理地址，留空则检测系统代理"""
 
@@ -213,6 +236,25 @@ class ChatGLMAPI(BaseModel):
 class ChatGLMAuths(BaseModel):
     accounts: List[ChatGLMAPI] = []
     """ChatGLM的账号列表"""
+
+
+class SlackAppAccessToken(BaseModel):
+    channel_id: str
+    """负责与机器人交互的 Channel ID"""
+
+    access_token: str
+    """安装 Slack App 时获得的 access_token"""
+
+    proxy: Optional[str] = None
+    """可选的代理地址，留空则检测系统代理"""
+
+    app_endpoint: str = "https://chatgpt-proxy.lss233.com/claude-in-slack/backend-api/"
+    """API 的接入点"""
+
+
+class SlackAuths(BaseModel):
+    accounts: List[SlackAppAccessToken] = []
+    """Slack App 账号信息"""
 
 
 class TextToImage(BaseModel):
@@ -238,8 +280,10 @@ class TextToSpeech(BaseModel):
     """设置后所有的会话都会转语音再发一次"""
     engine: str = "azure"
     """文字转语音引擎选择，当前有azure和vits"""
-    default: str = "zh-CN-XiaoyanNeural"
+    default: str = "zh-CN-XiaoxiaoNeural"
     """默认设置为Azure语音音色"""
+    default_voice_prefix: List[str] = ["zh-CN", "zh-TW"]
+    """默认的提示音色前缀"""
 
 
 class AzureConfig(BaseModel):
@@ -258,8 +302,6 @@ class VitsConfig(BaseModel):
     """VITS语言语速"""
     timeout: int = 30
     """语音生成超时时间"""
-
-
 
 
 class Trigger(BaseModel):
@@ -304,7 +346,8 @@ class Trigger(BaseModel):
     """允许普通用户切换的模型列表"""
     allow_switching_ai: bool = True
     """允许普通用户切换AI"""
-
+    ping_command: List[str] = ["ping"]
+    """获取服务状态"""
 
 
 class Response(BaseModel):
@@ -320,7 +363,7 @@ class Response(BaseModel):
     error_format: str = "出现故障！如果这个问题持续出现，请和我说“重置会话” 来开启一段新的会话，或者发送 “回滚对话” 来回溯到上一条对话，你上一条说的我就当作没看见。\n原因：{exc}"
     """发生错误时发送的消息，请注意可以插入 {exc} 作为异常占位符"""
 
-    error_network_failure: str = "网络故障！连接 OpenAI 服务器失败，我需要更好的网络才能服务！\n{exc}"
+    error_network_failure: str = "网络故障！连接服务器失败，我需要更好的网络才能服务！\n{exc}"
     """发生网络错误时发送的消息，请注意可以插入 {exc} 作为异常占位符"""
 
     error_session_authenciate_failed: str = "身份验证失败！无法登录至 ChatGPT 服务器，请检查账号信息是否正确！\n{exc}"
@@ -332,6 +375,8 @@ class Response(BaseModel):
 
     error_server_overloaded: str = "抱歉，当前服务器压力有点大，请稍后再找我吧！"
     """服务器提示 429 错误时的回复 """
+
+    error_drawing: str = "画图失败！原因： {exc}"
 
     placeholder: str = (
         "您好！我是 Assistant，一个由 OpenAI 训练的大型语言模型。我不是真正的人，而是一个计算机程序，可以通过文本聊天来帮助您解决问题。如果您有任何问题，请随时告诉我，我将尽力回答。\n"
@@ -375,6 +420,12 @@ class Response(BaseModel):
     queued_notice: str = "消息已收到！当前我还有{queue_size}条消息要回复，请您稍等。"
     """新消息进入队列时，发送的通知。 queue_size 是当前排队的消息数"""
 
+    ping_response: str = "当前AI：{current_ai} / 当前语音：{current_voice}\n指令：\n切换AI XXX / 切换语音 XXX" \
+                         "\n\n可用AI：\n{supported_ai}"
+    """ping返回内容"""
+    ping_tts_response: str = "\n可用语音：\n{supported_tts}"
+    """ping tts 返回"""
+
 
 class System(BaseModel):
     accept_group_invite: bool = False
@@ -395,8 +446,6 @@ class BaiduCloud(BaseModel):
     """不合规消息自定义返回"""
 
 
-
-
 class Preset(BaseModel):
     command: str = r"加载预设 (\w+)"
     keywords: dict[str, str] = {}
@@ -404,7 +453,6 @@ class Preset(BaseModel):
     scan_dir: str = "./presets"
     hide: bool = False
     """是否禁止使用其他人 .预设列表 命令来查看预设"""
-
 
 
 class Ratelimit(BaseModel):
@@ -417,6 +465,39 @@ class Ratelimit(BaseModel):
     exceed: str = "已达到额度限制，请等待下一小时继续和我对话。"
     """超额消息"""
 
+    draw_warning_msg: str = "\n\n警告：额度即将耗尽！\n目前已画：{usage}个图，最大限制为{limit}个图/小时，请调整您的节奏。\n额度限制整点重置，当前服务器时间：{current_time}"
+    """警告消息"""
+
+    draw_exceed: str = "已达到额度限制，请等待下一小时再使用画图功能。"
+    """超额消息"""
+
+
+class SDWebUI(BaseModel):
+    api_url: str
+    """API 基地址，如：http://127.0.0.1:7890"""
+    prompt_prefix: str = 'masterpiece, best quality, illustration, extremely detailed 8K wallpaper'
+    """内置提示词，所有的画图内容都会加上这些提示词"""
+    negative_prompt: str = 'NG_DeepNegative_V1_75T, badhandv4, EasyNegative, bad hands, missing fingers, cropped legs, worst quality, low quality, normal quality, jpeg artifacts, blurry,missing arms, long neck, Humpbacked,multiple breasts, mutated hands and fingers, long body, mutation, poorly drawn , bad anatomy,bad shadow,unnatural body, fused breasts, bad breasts, more than one person,wings on halo,small wings, 2girls, lowres, bad anatomy, text, error, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, out of frame, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, nsfw, nake, nude, blood'
+    """负面提示词"""
+    sampler_index: str = 'DPM++ SDE Karras'
+    filter_nsfw: bool = True
+    denoising_strength: float = 0.45
+    steps: int = 25
+    enable_hr: bool = False
+    seed: int = -1
+    batch_size: int = 1
+    n_iter: int = 1
+    cfg_scale: float = 7.5
+    restore_faces: bool = False
+    authorization: str = ''
+    """登录api的账号:密码"""
+
+    timeout: float = 10.0
+    """超时时间"""
+
+    class Config(BaseConfig):
+        extra = Extra.allow
+
 
 class Config(BaseModel):
     # === Platform Settings ===
@@ -425,6 +506,7 @@ class Config(BaseModel):
     telegram: Optional[TelegramBot] = None
     discord: Optional[DiscordBot] = None
     http: Optional[HttpService] = None
+    wecom: Optional[WecomBot] = None
 
     # === Account Settings ===
     openai: OpenAIAuths = OpenAIAuths()
@@ -434,6 +516,7 @@ class Config(BaseModel):
     yiyan: YiyanAuths = YiyanAuths()
     chatglm: ChatGLMAuths = ChatGLMAuths()
     poe: PoeAuths = PoeAuths()
+    slack: SlackAuths = SlackAuths()
 
     # === Response Settings ===
     text_to_image: TextToImage = TextToImage()
@@ -445,6 +528,9 @@ class Config(BaseModel):
     ratelimit: Ratelimit = Ratelimit()
     baiducloud: BaiduCloud = BaiduCloud()
     vits: VitsConfig = VitsConfig()
+
+    # === External Utilities ===
+    sdwebui: Optional[SDWebUI] = None
 
     def scan_presets(self):
         for keyword, path in self.presets.keywords.items():
@@ -472,10 +558,10 @@ class Config(BaseModel):
                 else:
                     raise ValueError("无法识别预设的 JSON 格式，请检查编码！")
 
-        except KeyError:
-            raise ValueError("预设不存在！")
-        except FileNotFoundError:
-            raise ValueError("预设文件不存在！")
+        except KeyError as e:
+            raise ValueError("预设不存在！") from e
+        except FileNotFoundError as e:
+            raise ValueError("预设文件不存在！") from e
         except Exception as e:
             logger.exception(e)
             logger.error("配置文件有误，请重新修改！")
@@ -498,11 +584,12 @@ class Config(BaseModel):
 
     @staticmethod
     def load_config() -> Config:
+        if env_config := os.environ.get('CHATGPT_FOR_BOT_FULL_CONFIG', ''):
+            return Config.parse_obj(toml.loads(env_config))
         try:
-            import os
             if (
-                not os.path.exists('config.cfg')
-                or os.path.getsize('config.cfg') <= 0
+                    not os.path.exists('config.cfg')
+                    or os.path.getsize('config.cfg') <= 0
             ) and os.path.exists('config.json'):
                 logger.info("正在转换旧版配置文件……")
                 Config.save_config(Config.__load_json_config())
